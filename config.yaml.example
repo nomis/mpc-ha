@@ -1,0 +1,10 @@
+speakers:
+ Front Bedroom:
+  address: [123456, 2]
+  auto: False
+ Rear Bedroom:
+  address: [123456, 0]
+ Living Room: {}
+ Kitchen:
+  address: [123456, 1]
+transmitter: "/dev/serial/by-path/..."
