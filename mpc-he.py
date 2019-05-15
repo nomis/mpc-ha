@@ -47,7 +47,6 @@ def update_outputs(client, first=False):
 				now_disabled.add(output["outputname"])
 
 	auto_on = False
-	auto_off = False
 
 	if now_enabled != last_enabled:
 		for output in (now_enabled - last_enabled):
@@ -55,20 +54,20 @@ def update_outputs(client, first=False):
 			transmit(output, "on")
 			if config["speakers"][output].get("auto", True):
 				auto_on = True
-	if now_disabled != last_disabled:
-		for output in (now_disabled - last_disabled):
-			print("Disable " + output)
-			transmit(output, "off")
-			auto_off = True
 
 	if not first:
-		if auto_off and last_enabled and not now_enabled:
+		if last_enabled and not now_enabled:
 			print("Pause")
 			client.pause()
 		elif auto_on and not last_enabled and now_enabled:
 			if client.status()["state"] == "pause":
 				print("Resume")
 				client.play()
+
+	if now_disabled != last_disabled:
+		for output in (now_disabled - last_disabled):
+			print("Disable " + output)
+			transmit(output, "off")
 
 	last_enabled = now_enabled
 	last_disabled = now_disabled
