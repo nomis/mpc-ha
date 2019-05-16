@@ -64,6 +64,10 @@ def update_outputs(client, first=False):
 				print("Resume")
 				client.play()
 
+	if not now_enabled and client.status()["state"] == "play":
+		print("Pause")
+		client.pause()
+
 	if now_disabled != last_disabled:
 		for output in (now_disabled - last_disabled):
 			print("Disable " + output)
@@ -78,5 +82,5 @@ client.connect(hostname, 6600)
 client.password(password)
 
 update_outputs(client, True)
-while client.idle("output"):
+while client.idle("player", "output"):
 	update_outputs(client)
