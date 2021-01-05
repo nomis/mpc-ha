@@ -8,3 +8,4 @@ speakers:
  Kitchen:
   address: [123456, 1]
 transmitter: "/dev/serial/by-path/..."
+consume-auto-off: False

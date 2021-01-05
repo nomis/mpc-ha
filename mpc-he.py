@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2019  Simon Arlott
+# Copyright 2019,2021  Simon Arlott
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,6 +75,16 @@ def update_outputs(client, first=False):
 
 	last_enabled = now_enabled
 	last_disabled = now_disabled
+
+	if config.get("consume-auto-off"):
+		status = client.status()
+		if status["state"] == "stop" and int(status["consume"]) == 1 and int(status["playlistlength"]) == 0:
+			print("Consume finished, disabling all outputs")
+			client.consume(0)
+			for output in client.outputs():
+				if output["outputname"] in config["speakers"]:
+					if int(output["outputenabled"]) == 1:
+						client.disableoutput(output["outputid"])
 
 
 client = mpd.MPDClient()
