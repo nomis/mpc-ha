@@ -45,6 +45,16 @@ def update_outputs(client, first=False):
 				now_enabled.add(output["outputname"])
 			else:
 				now_disabled.add(output["outputname"])
+		if output["outputname"] in config["doorbell"]:
+			if int(output["outputenabled"]) == 1:
+				print("Doorbell")
+				if client.status()["state"] == "play":
+					print("Pause")
+					client.pause()
+				command = config["doorbell"][output["outputname"]].get("command")
+				if command:
+					os.posix_spawnp("sh", ["sh", "-c", command], {})
+				client.disableoutput(output["outputid"])
 
 	auto_on = False
 

@@ -9,3 +9,6 @@ speakers:
   address: [123456, 1]
 transmitter: "/dev/serial/by-path/..."
 consume-auto-off: False
+doorbell:
+ Doorbell:
+  command: "aplay -D doorbell doorbell.wav"
