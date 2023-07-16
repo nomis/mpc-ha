@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2019,2021-2022  Simon Arlott
+# Copyright 2019,2021-2023  Simon Arlott
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,21 +17,23 @@
 
 import mpd
 import os
-import subprocess
+import requests
 import yaml
 
 password, hostname = os.environ["MPD_HOST"].split("@")
 with open("config.yaml", "r") as f:
-	config = yaml.load(f)
+	config = yaml.safe_load(f)
 
+session = requests.Session()
+session.headers.update({"Authorization": f"Bearer {config['homeassistant']['token']}"})
 
 last_enabled = set()
 last_disabled = set()
 
-def transmit(output, state):
-	address = config["speakers"][output].get("address")
-	if address:
-		subprocess.call(["../rf433-ook/encoders/HomeEasyV3.py", str(address[0]), "-d", str(address[1]), state, "-p", config["transmitter"]])
+def switch(output, state):
+	name = config["speakers"][output].get("switch")
+	if name:
+		session.post(f"{config['homeassistant']['url']}/api/services/switch/turn_{state}", json={"entity_id": name})
 
 def update_outputs(client, first=False):
 	global last_enabled, last_disabled
@@ -61,7 +63,7 @@ def update_outputs(client, first=False):
 	if now_enabled != last_enabled:
 		for output in (now_enabled - last_enabled):
 			print("Enable " + output)
-			transmit(output, "on")
+			switch(output, "on")
 			if config["speakers"][output].get("auto", True):
 				auto_on = True
 
@@ -81,7 +83,7 @@ def update_outputs(client, first=False):
 	if now_disabled != last_disabled:
 		for output in (now_disabled - last_disabled):
 			print("Disable " + output)
-			transmit(output, "off")
+			switch(output, "off")
 
 	last_enabled = now_enabled
 	last_disabled = now_disabled

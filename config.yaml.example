@@ -1,13 +1,15 @@
 speakers:
  Front Bedroom:
-  address: [123456, 2]
-  auto: False
+  switch: "switch.front_bedroom_speakers"
  Rear Bedroom:
-  address: [123456, 0]
+  switch: "switch.rear_bedroom_speakers"
+  auto: False
  Living Room: {}
  Kitchen:
-  address: [123456, 1]
-transmitter: "/dev/serial/by-path/..."
+  switch: "switch.kitchen_speakers"
+homeassistant:
+ url: "https://homeassistant.example.com"
+ token: "..."
 consume-auto-off: False
 doorbell:
  Doorbell:
