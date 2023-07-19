@@ -15,9 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import logging
+import logging.handlers
 import mpd
 import os
 import requests
+import sys
 import yaml
 
 password, hostname = os.environ["MPD_HOST"].split("@")
@@ -26,6 +29,8 @@ with open("config.yaml", "r") as f:
 
 session = requests.Session()
 session.headers.update({"Authorization": f"Bearer {config['homeassistant']['token']}"})
+
+log = logging.getLogger("mpc-ha")
 
 last_enabled = set()
 last_disabled = set()
@@ -49,9 +54,9 @@ def update_outputs(client, first=False):
 				now_disabled.add(output["outputname"])
 		if output["outputname"] in config["doorbell"]:
 			if int(output["outputenabled"]) == 1:
-				print("Doorbell")
+				log.info("Doorbell")
 				if client.status()["state"] == "play":
-					print("Pause")
+					log.info("Pause")
 					client.pause()
 				command = config["doorbell"][output["outputname"]].get("command")
 				if command:
@@ -62,27 +67,27 @@ def update_outputs(client, first=False):
 
 	if now_enabled != last_enabled:
 		for output in (now_enabled - last_enabled):
-			print("Enable " + output)
+			log.info("Enable " + output)
 			switch(output, "on")
 			if config["speakers"][output].get("auto", True):
 				auto_on = True
 
 	if not first:
 		if last_enabled and not now_enabled:
-			print("Pause")
+			log.info("Pause")
 			client.pause()
 		elif auto_on and not last_enabled and now_enabled:
 			if client.status()["state"] == "pause":
-				print("Resume")
+				log.info("Resume")
 				client.play()
 
 	if not now_enabled and client.status()["state"] == "play":
-		print("Pause")
+		log.info("Pause")
 		client.pause()
 
 	if now_disabled != last_disabled:
 		for output in (now_disabled - last_disabled):
-			print("Disable " + output)
+			log.info("Disable " + output)
 			switch(output, "off")
 
 	last_enabled = now_enabled
@@ -91,7 +96,7 @@ def update_outputs(client, first=False):
 	status = client.status()
 	if config.get("consume-auto-off"):
 		if status["state"] == "stop" and int(status["consume"]) == 1 and int(status["playlistlength"]) == 0:
-			print("Consume finished, disabling all outputs")
+			log.info("Consume finished, disabling all outputs")
 			client.consume(0)
 			for output in client.outputs():
 				if output["outputname"] in config["speakers"]:
@@ -99,14 +104,28 @@ def update_outputs(client, first=False):
 						client.disableoutput(output["outputid"])
 
 	if int(status["volume"]) not in [-1, 100]:
-		print("Set volume to 100%")
+		log.info("Set volume to 100%")
 		client.setvol(100)
 
 
-client = mpd.MPDClient()
-client.connect(hostname, 6600)
-client.password(password)
+if __name__ == "__main__":
+	root = logging.getLogger()
+	root.setLevel(level=logging.DEBUG)
 
-update_outputs(client, True)
-while client.idle("player", "output", "mixer"):
-	update_outputs(client)
+	handler = logging.StreamHandler(sys.stdout)
+	handler.setLevel(level=logging.DEBUG)
+	handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+	root.addHandler(handler)
+
+	handler = logging.handlers.SysLogHandler("/dev/log")
+	handler.setLevel(level=logging.INFO)
+	handler.setFormatter(logging.Formatter("mpc-ha: %(levelname)s %(name)s: %(message)s"))
+	root.addHandler(handler)
+
+	client = mpd.MPDClient()
+	client.connect(hostname, 6600)
+	client.password(password)
+
+	update_outputs(client, True)
+	while client.idle("player", "output", "mixer"):
+		update_outputs(client)
