@@ -38,7 +38,9 @@ last_disabled = set()
 def switch(output, state):
 	name = config["speakers"][output].get("switch")
 	if name:
-		session.post(f"{config['homeassistant']['url']}/api/services/switch/turn_{state}", json={"entity_id": name})
+		resp = session.post(f"{config['homeassistant']['url']}/api/services/switch/turn_{state}", json={"entity_id": name})
+		if resp.status_code != 200:
+			self.log.error(f"Failed to change power status for {name} to {state}: {resp.status_code} {resp.text}")
 
 def update_outputs(client, first=False):
 	global last_enabled, last_disabled
