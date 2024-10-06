@@ -58,7 +58,7 @@ def update_outputs(client, first=False):
 			if int(output["outputenabled"]) == 1:
 				log.info("Doorbell")
 				if client.status()["state"] == "play":
-					log.info("Pause")
+					log.info("Pause (for doorbell)")
 					client.pause()
 				command = config["doorbell"][output["outputname"]].get("command")
 				if command:
@@ -76,16 +76,18 @@ def update_outputs(client, first=False):
 
 	if not first:
 		if last_enabled and not now_enabled:
-			log.info("Pause")
+			log.info("Pause (all now disabled)")
 			client.pause()
+			os.spawnlp(os.P_NOWAIT, "sh", "sh", "-c", config["stop_command"])
 		elif auto_on and not last_enabled and now_enabled:
-			if client.status()["state"] == "pause":
+			if client.status()["state"] == "pause" and subprocess.run(config["auto_command"], shell=True).returncode == 0:
 				log.info("Resume")
 				client.play()
 
 	if not now_enabled and client.status()["state"] == "play":
-		log.info("Pause")
+		log.info("Pause (none enabled)")
 		client.pause()
+		os.spawnlp(os.P_NOWAIT, "sh", "sh", "-c", config["stop_command"])
 
 	if now_disabled != last_disabled:
 		for output in (now_disabled - last_disabled):

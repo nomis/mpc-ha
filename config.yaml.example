@@ -14,3 +14,5 @@ consume-auto-off: False
 doorbell:
  Doorbell:
   command: "aplay -D doorbell doorbell.wav"
+auto_command: "true"
+stop_command: "true"
